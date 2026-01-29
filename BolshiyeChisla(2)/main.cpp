@@ -1,98 +1,109 @@
 /*- Большие числа (задание -2) -*/
 
 #include <iostream>
-#include <vector>
+#include <string>
 using namespace std;
 
 class big_integer
 {
 public:
-  void add(vector<int> &lineOne, vector<int> &lineTwo)
+  big_integer(string line)
   {
-    this->acc.clear(); // очищаем накопитель
-
-    vector<int> longLine = {};  // более длинная строка
-    vector<int> shortLine = {}; // более короткая строка
-
-    if (lineOne.size() > lineTwo.size()) // если первая строка длиннее второй
-    {
-      longLine = move(lineOne);  // длинная строка это первая
-      shortLine = move(lineTwo); // короткая строка это вторая
-    }
-    else // если вторая строка длиннее первой или такая же
-    {
-      longLine = move(lineTwo);  // длинная это вторая
-      shortLine = move(lineOne); // короткая это первая
-    }
-    int transfer = 0;                              // перенос в старший разряд (изначально 0)
-    int j = shortLine.size() - 1;                  // конец короткой строки
-    for (int i = longLine.size() - 1; i > -1; --i) // обходим длинную строку с конца
-    {
-      if (j > -1) // если короткая строка не кончилась
-      {
-        int res = longLine[i] + shortLine[j] + transfer;
-        if (res > 9)
-        {
-          res = res - 10;
-          transfer = 1;
-        }
-        else
-        {
-          transfer = 0;
-        }
-        this->acc.insert(this->acc.begin(), res);
-        j--;
-      }
-      else // если короткая строка кончилась
-      {
-        int res = longLine[i] + transfer;
-        if (res > 9)
-        {
-          res = res - 10;
-          transfer = 1;
-        }
-        else
-        {
-          transfer = 0;
-        }
-        this->acc.insert(this->acc.begin(), res);
-      }
-    };
-    if (transfer != 0) // если обе строки кончились, а перенос не 0
-    {
-      this->acc.insert(this->acc.begin(), transfer);
-    }
-    return;
+    this->acc = move(line);
   };
-  void mul(vector<int> &line, int number)
+
+  big_integer operator+(big_integer &other)
   {
-    if (number > 9)
+    string otherNumber = other.show();
+    int maxSize = 0;                           //-наибольший размер
+    if (this->acc.size() > otherNumber.size()) // узнаём, какой размер длиннее
     {
-      cout << ">9!" << endl;
-      return;
+      maxSize = this->acc.size();
+    }
+    else
+    {
+      maxSize = otherNumber.size();
     };
-    this->acc.clear();
-    int transfer = 0;
-    for (int i = line.size() - 1; i > -1; i--)
+
+    int countFirstLine = this->acc.size() - 1;    // показывает на последний элемент нашего накопителя
+    int countSecondLine = otherNumber.size() - 1; // показывает на последний элемент другого накопителя
+    string result = "";                           // результирующая строка
+    int transfer = 0;                             // перенос в старший разряд
+
+    for (int i = 0; i < maxSize; ++i) // обходим размер наидлиннейшей из строк
     {
-      int res = line[i] * number + transfer;
-      if (res > 9)
+      int firstTerm = 0;
+      int secondTerm = 0;
+      if (countFirstLine > -1)
       {
-        int result = res % 10;
-        transfer = (res - result) / 10;
-        this->acc.insert(this->acc.begin(), result);
+        firstTerm = this->acc[countFirstLine] - '0';
       }
       else
       {
-        transfer = 0;
-        this->acc.insert(this->acc.begin(), res);
+        firstTerm = 0;
+      };
+      if (countSecondLine > -1)
+      {
+        secondTerm = otherNumber[countSecondLine] - '0';
       }
+      else
+      {
+        secondTerm = 0;
+      }
+      int res = firstTerm + secondTerm + transfer;
+      if (res < 10)
+      {
+        transfer = 0;
+      }
+      else
+      {
+        transfer = 1;
+        res -= 10;
+      }
+      result.insert(result.begin(), res + '0');
+      countFirstLine--;
+      countSecondLine--;
     };
     if (transfer != 0)
     {
-      this->acc.insert(this->acc.begin(), transfer);
+      result.insert(result.begin(), transfer + '0');
     };
-    return;
+    return big_integer(result);
+  };
+
+  big_integer operator*(int factor) const
+  {
+    if (factor > 9)
+    {
+      cout << "Unknow factor!" << endl;
+      return big_integer("0");
+    };
+
+    int lineSize = this->acc.size();
+    int transfer = 0;
+    string result = "";
+
+    for (int i = lineSize - 1; i > -1; i--)
+    {
+      int partMultiplicand = this->acc[i] - '0';
+      int res = partMultiplicand * factor + transfer;
+      if (res < 10)
+      {
+        transfer = 0;
+        result.insert(result.begin(), res + '0');
+      }
+      else
+      {
+        int res2 = res % 10;
+        result.insert(result.begin(), res2 + '0');
+        transfer = (res - res2) / 10;
+      };
+    };
+    if (transfer != 0)
+    {
+      result.insert(result.begin(), transfer + '0');
+    };
+    return big_integer(result);
   };
 
   big_integer &operator=(big_integer &&other) noexcept // перемещающий оператор присваивания
@@ -103,73 +114,36 @@ public:
       this->acc = move(other.acc);
     }
     return *this;
-  };
+  }
 
-  void show() // демонстрация накопителя
+  string show()
   {
-    for (int i = 0; i < this->acc.size(); ++i)
-    {
-      cout << this->acc[i];
-    }
-    cout << endl;
-    return;
+    return this->acc;
   }
 
 private:
-  vector<int> acc = {};
+  string acc = "";
 };
+
+ostream &operator<<(ostream &out, big_integer &b)
+{
+  out << b.show();
+  return out;
+}
 
 int main()
 {
-  big_integer BI;
-  BI.show();
+  auto number1 = big_integer("114575");
+  auto number2 = big_integer("78524");
+  auto result = number1 + number2;
+  cout << result << endl;
 
-  vector<int> sl1 = {2};
-  vector<int> sl2 = {5};
-  BI.add(sl1, sl2);
-  BI.show();
+  auto number3 = big_integer("25");
+  auto result2 = number3 * 5;
+  cout << result2 << endl;
 
-  sl1 = {9};
-  sl2 = {9};
-  BI.add(sl1, sl2);
-  BI.show();
-
-  sl1 = {9, 9};
-  sl2 = {4};
-  BI.add(sl1, sl2);
-  BI.show();
-
-  sl1 = {9, 9};
-  sl2 = {9, 9};
-  BI.add(sl1, sl2);
-  BI.show();
-
-  sl1 = {5};
-  int m = 2;
-  BI.mul(sl1, m);
-  BI.show();
-
-  sl1 = {5};
-  m = 5;
-  BI.mul(sl1, m);
-  BI.show();
-
-  sl1 = {2, 5};
-  m = 5;
-  BI.mul(sl1, m);
-  BI.show();
-
-  big_integer BI2;
-  cout << "BI2 do: ";
-  BI2.show();
-
-  BI2 = move(BI);
-
-  cout << "BI2 posle: ";
-  BI2.show();
-
-  cout << "BI posle: ";
-  BI.show();
+  result = move(result2);
+  cout << result << endl;
 
   return 0;
 };
