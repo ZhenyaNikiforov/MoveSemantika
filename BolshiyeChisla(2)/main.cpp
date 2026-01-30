@@ -7,10 +7,17 @@ using namespace std;
 class big_integer
 {
 public:
-  big_integer(string line)
+  big_integer(string line) // обычный конструктор
   {
     this->acc = move(line);
   };
+
+  big_integer(big_integer &&other) noexcept // перемещающий конструктор
+  {
+    this->acc = move(other.acc);
+  }
+
+  /*...деструкторов здесь нет, поскольку строка (std::string) очищает память автоматически*/
 
   big_integer operator+(big_integer &other)
   {
@@ -144,6 +151,14 @@ int main()
 
   result = move(result2);
   cout << result << endl;
+
+  big_integer nmb1 = big_integer("1234567890");
+  cout << "nmb1 do: " << nmb1 << endl;
+
+  big_integer rslt = std::move(nmb1);
+  cout << "rslt : " << rslt << endl;
+
+  cout << "nmb1 posle: " << nmb1 << endl;
 
   return 0;
 };
